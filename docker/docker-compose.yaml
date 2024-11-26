@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:13.3
+    container_name: postgres_container
+    environment:
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+
+#  kafka:
+#    image: kafka
+#    ports:
+#      - '4222:4222'
+#      - '8222:8222'
+
+
+#  app:
+#    image: # golang
+#    environment:
