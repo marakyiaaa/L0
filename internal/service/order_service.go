@@ -1,7 +1,9 @@
 package service
 
 import (
+	"fmt"
 	"gorm.io/gorm"
+	"l0/cmd/kafka"
 	"l0/internal/model"
 	"sync"
 )
@@ -48,5 +50,12 @@ func (s *OrderService) CreateOrder(order *model.Order) error {
 		return err
 	}
 	s.cache.Store(order.Order_uid, order)
+
+	// Отправляем сообщение в Kafka о создании заказа
+	message := fmt.Sprintf("Order %s created", order.Order_uid)
+	if err := kafka.SendMessage("order_key", message); err != nil {
+		return fmt.Errorf("failed to send Kafka message: %v", err)
+	}
+
 	return nil
 }
