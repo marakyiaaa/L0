@@ -37,6 +37,6 @@ func SendMessage(key, message string) error {
 		return err
 	}
 
-	log.Printf("Сообщение отправлено: %s", message)
+	log.Printf("Message sent: %s", message)
 	return nil
 }

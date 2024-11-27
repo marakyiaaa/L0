@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Information</title>
+    <script>
+        function fetchOrderData() {
+            var orderId = document.getElementById('order-id').value;
+
+            if (!orderId) {
+                alert('Please enter an Order ID');
+                return;
+            }
+
+            fetch(`/order/${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('order-details').innerHTML = `
+                        <h3>Order Details</h3>
+                        <p>Order ID: ${data.order_uid}</p>
+                        <p>Status: ${data.status}</p>
+                        <p>Total Price: ${data.total_price}</p>
+                        <p>Items: ${data.items.map(item => item.name).join(', ')}</p>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('order-details').innerHTML = `<p>Order not found</p>`;
+                });
+        }
+    </script>
+</head>
+<body>
+<h1>Order Search</h1>
+<label for="order-id">Enter Order ID:</label>
+<input type="text" id="order-id" />
+<button onclick="fetchOrderData()">Search</button>
+
+<div id="order-details"></div>
+</body>
+</html>

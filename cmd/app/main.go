@@ -8,6 +8,7 @@ import (
 	"l0/internal/service"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -49,6 +50,18 @@ func main() {
 	kafka.InitProducer(broker, topic)
 	defer kafka.CloseProducer()
 
+	// Пример отправки сообщения
+	for i := 0; i < 5; i++ {
+		message := "order " + time.Now().Format(time.RFC3339)
+		err := kafka.SendMessage("order_key", message)
+		if err != nil {
+			log.Printf("Failed to send message: %v", err)
+		}
+		time.Sleep(2 * time.Second)
+	}
+
+	log.Println("Сообщение отправлено в Kafka")
+
 	// Запуск Kafka Consumer
 	go kafka.ConsumeMessages(broker, topic, orderService)
 
@@ -71,8 +84,11 @@ func main() {
 //	kafka.InitProducer(broker, topic)
 //	defer kafka.CloseProducer()
 //
+//	//	// Инициализация сервиса
+//	orderService := service.NewOrderService(db)
+//
 //	// Запуск Kafka Consumer
-//	go kafka.ConsumeMessages(broker, topic)
+//	go kafka.ConsumeMessages(broker, topic, orderService)
 //
 //	// Пример отправки сообщения
 //	for i := 0; i < 5; i++ {
