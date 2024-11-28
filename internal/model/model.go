@@ -1,18 +1,16 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"time"
 )
 
 type Order struct {
-	gorm.Model
-	Order_uid         string    `json:"id" gorm:"primaryKey"`
-	Track_number      string    `json:"track_number" gorm:"primaryKey"`
+	Order_uid         string    `json:"order_uid" gorm:"primaryKey;unique"`
+	Track_number      string    `json:"track_number"`
 	Entry             string    `json:"entry"`
-	Delivery          Delivery  `json:"delivery"`
-	Payment           Payment   `json:"payment"`
-	Items             []Items   `json:"items"`
+	Delivery          Delivery  `json:"delivery" gorm:"foreignKey:OrderUID;references:Order_uid"`
+	Payment           Payment   `json:"payment" gorm:"foreignKey:OrderUID;references:Order_uid"`
+	Items             []Items   `json:"items" gorm:"foreignKey:OrderUID;references:Order_uid"`
 	Locale            string    `json:"locale"`
 	InternalSignature string    `json:"internal_signature"`
 	CustomerId        string    `json:"customer_id"`
@@ -24,18 +22,20 @@ type Order struct {
 }
 
 type Delivery struct {
-	Id      int    `json:"-" gorm:"primaryKey"`
-	Name    string `json:"name"`
-	Phone   string `json:"phone"`
-	Zip     string `json:"zip"`
-	City    string `json:"city"`
-	Address string `json:"address"`
-	Region  string `json:"region"`
-	Email   string `json:"email"`
+	Id       int    `json:"-" gorm:"primaryKey"`
+	OrderUID string `json:"-" gorm:"index"` // Связь с Order
+	Name     string `json:"name"`
+	Phone    string `json:"phone"`
+	Zip      string `json:"zip"`
+	City     string `json:"city"`
+	Address  string `json:"address"`
+	Region   string `json:"region"`
+	Email    string `json:"email"`
 }
 
 type Payment struct {
 	Id           int    `json:"-" gorm:"primaryKey"`
+	OrderUID     string `json:"-" gorm:"index"` // Связь с Order
 	Transaction  string `json:"transaction" gorm:"primaryKey"`
 	RequestId    string `json:"request_id"`
 	Currency     string `json:"currency"`
@@ -50,6 +50,7 @@ type Payment struct {
 
 type Items struct {
 	Id          int    `json:"-" gorm:"primaryKey"`
+	OrderUID    string `json:"-" gorm:"index"` // Связь с Order
 	ChrtId      int    `json:"chrt_id" gorm:"primaryKey"`
 	TrackNumber string `json:"track_number"`
 	Price       int    `json:"price"`

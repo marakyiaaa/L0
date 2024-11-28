@@ -2,7 +2,9 @@ package kafka
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/segmentio/kafka-go"
+	"l0/internal/model"
 	"log"
 )
 
@@ -39,4 +41,16 @@ func SendMessage(key, message string) error {
 
 	log.Printf("Message sent: %s", message)
 	return nil
+}
+
+func SendOrderMessage(order model.Order, key string) error {
+	// Сериализация структуры Order в JSON
+	messageBytes, err := json.Marshal(order)
+	if err != nil {
+		log.Printf("Ошибка сериализации JSON: %v", err)
+		return err
+	}
+
+	// Отправка JSON-сообщения
+	return SendMessage(key, string(messageBytes))
 }

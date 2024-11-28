@@ -31,6 +31,11 @@ func ConsumeMessages(broker string, topic string, orderService *service.OrderSer
 		}
 		log.Printf("Сообщение получено: key=%s, value=%s", string(m.Key), string(m.Value))
 
+		if !json.Valid(m.Value) {
+			log.Printf("Некорректный формат JSON: %s", string(m.Value))
+			continue
+		}
+
 		var order model.Order
 		if err := json.Unmarshal(m.Value, &order); err != nil {
 			log.Printf("Ошибка при декодировании данных: %v", err)

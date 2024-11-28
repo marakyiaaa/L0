@@ -43,11 +43,39 @@ func (s *OrderService) GetOrderByID(orderUID string) (*model.Order, error) {
 // Добавить заказ в и бд, и кэш
 
 func (s *OrderService) CreateOrder(order *model.Order) error {
-	if err := s.db.Create(order).Error; err != nil {
-		//gorm.DB.Create сохраняет новый заказ в бд
+	var existingOrder model.Order
+	// Проверяем, существует ли уже заказ с таким order_uid
+	err := s.db.First(&existingOrder, "order_uid = ?", order.Order_uid).Error
+
+	if err == nil {
+		// Заказ с таким order_uid уже существует, обновляем его
+		// Обновляем только те поля, которые нужно изменить
+		err := s.db.Model(&existingOrder).Updates(model.Order{
+			Track_number:      order.Track_number,
+			Entry:             order.Entry,
+			Locale:            order.Locale,
+			InternalSignature: order.InternalSignature,
+			CustomerId:        order.CustomerId,
+			DeliveryService:   order.DeliveryService,
+			Shardkey:          order.Shardkey,
+			SmId:              order.SmId,
+			DateCreated:       order.DateCreated,
+			OofShard:          order.OofShard,
+		}).Error
+		if err != nil {
+			return err
+		}
+	} else if err == gorm.ErrRecordNotFound {
+		// Заказ не найден, создаём новый
+		err = s.db.Create(order).Error
+		if err != nil {
+			return err
+		}
+	} else {
 		return err
 	}
-	s.cache.Store(order.Order_uid, order)
 
+	// Сохраняем заказ в кэш
+	s.cache.Store(order.Order_uid, order)
 	return nil
 }
