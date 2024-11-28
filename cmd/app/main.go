@@ -123,13 +123,19 @@ func main() {
 	// Создаем обработчик HTTP
 	orderHandler := handler.NewOrderHandler(orderService)
 
+	// Получение адреса сервера из переменной окружения или установка значения по умолчанию
+	serverAddress := os.Getenv("SERVER_ADDRESS")
+	if serverAddress == "" {
+		serverAddress = "127.0.0.1:8080" // Значение по умолчанию
+	}
+
 	// Регистрируем маршрут для получения заказа
 	http.HandleFunc("/order", orderHandler.GetOrder)
 
 	// Запуск HTTP сервера на порту 8080
 	go func() {
-		log.Println("Запуск HTTP сервера на порту 8081...")
-		if err := http.ListenAndServe(":8081", nil); err != nil {
+		log.Println("Запуск HTTP сервера на порту 8080...")
+		if err := http.ListenAndServe(":8080", nil); err != nil {
 			log.Fatalf("Ошибка при запуске HTTP сервера: %v", err)
 		}
 	}()
@@ -149,6 +155,6 @@ func main() {
 		log.Println("Кэш успешно сохранен в базу данных.")
 	}
 
-	log.Println("Приложение запущено")
+	log.Println("Приложение завершило работу")
 	select {}
 }
