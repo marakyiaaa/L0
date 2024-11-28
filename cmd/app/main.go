@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -16,6 +17,10 @@ import (
 func main() {
 	// Флаг для выбора режима работы
 	writeData := flag.Bool("write-data", false, "Write data to database from JSON file")
+
+	// Дополнительный флаг для указания пути к файлу (необязательно)
+	filePath := flag.String("file", "", "Path to the file to write")
+
 	flag.Parse()
 
 	// Загрузка переменных окружения
@@ -47,7 +52,16 @@ func main() {
 
 	// Если выбран режим записи данных
 	if *writeData {
-		err = model.WriteDataDB(db, "internal/model/model.json")
+		if *filePath == "" {
+			// Запросить путь к файлу, если не передан в аргументах
+			fmt.Print("Введите путь к файлу для записи данных: ")
+			_, err := fmt.Scanln(filePath)
+			if err != nil {
+				log.Fatalf("Ошибка ввода пути к файлу: %v", err)
+			}
+		}
+		// Вызываем метод для записи данных в базу данных
+		err = model.WriteDataDB(db, *filePath)
 		if err != nil {
 			log.Fatalf("Ошибка записи данных в базу: %v", err)
 		}

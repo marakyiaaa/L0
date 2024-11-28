@@ -23,6 +23,11 @@ func WriteDataDB(db *gorm.DB, filePath string) error {
 		return fmt.Errorf("ошибка парсинга JSON: %w", err)
 	}
 
+	// Валидируем заказ перед записью
+	if !validateOrder(order) {
+		return fmt.Errorf("данные заказа некорректны")
+	}
+
 	// Установка связей для вложенных структур
 	order.Delivery.OrderUID = order.Order_uid
 	order.Payment.OrderUID = order.Order_uid

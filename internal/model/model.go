@@ -1,6 +1,7 @@
 package model
 
 import (
+	"log"
 	"time"
 )
 
@@ -62,4 +63,23 @@ type Items struct {
 	NmId        int    `json:"nm_id"`
 	Brand       string `json:"brand"`
 	Status      int    `json:"status"`
+}
+
+// validateOrder - функция валидации данных заказа
+func validateOrder(order Order) bool {
+	if order.Order_uid == "" {
+		log.Println("Invalid OrderUID")
+		return false
+	}
+	if len(order.Items) == 0 {
+		log.Println("Order must have at least one item")
+		return false
+	}
+	if order.Payment.Amount <= 0 {
+		log.Println("Payment amount must be greater than zero")
+		return false
+	}
+	// Добавьте другие проверки по необходимости
+
+	return true
 }

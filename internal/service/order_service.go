@@ -19,6 +19,7 @@ func NewOrderService(db *gorm.DB) *OrderService {
 		cache: sync.Map{}, // Инициализируем пустой кэш
 		db:    db,         // Подключение к базе передается как аргумент
 	}
+
 }
 
 func (s *OrderService) GetOrderByID(orderUID string) (*model.Order, error) {
