@@ -1,8 +1,10 @@
 package service
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"l0/internal/model"
+	"log"
 	"sync"
 )
 
@@ -13,13 +15,16 @@ type OrderService struct {
 	db *gorm.DB // Подключение к базе данных
 }
 
-// создает новый экземпляр OrderService
+// создаем новый экземпляр OrderService
 func NewOrderService(db *gorm.DB) *OrderService {
-	return &OrderService{
-		cache: sync.Map{}, // Инициализируем пустой кэш
+	service := &OrderService{
+		cache: sync.Map{}, // Инициализация пустого кэша
 		db:    db,         // Подключение к базе передается как аргумент
 	}
 
+	// Восстановление кэша из БД при старте сервиса
+	service.RestoreCacheFromDB()
+	return service
 }
 
 func (s *OrderService) GetOrderByID(orderUID string) (*model.Order, error) {
@@ -50,19 +55,8 @@ func (s *OrderService) CreateOrder(order *model.Order) error {
 
 	if err == nil {
 		// Заказ с таким order_uid уже существует, обновляем его
-		// Обновляем только те поля, которые нужно изменить
-		err := s.db.Model(&existingOrder).Updates(model.Order{
-			Track_number:      order.Track_number,
-			Entry:             order.Entry,
-			Locale:            order.Locale,
-			InternalSignature: order.InternalSignature,
-			CustomerId:        order.CustomerId,
-			DeliveryService:   order.DeliveryService,
-			Shardkey:          order.Shardkey,
-			SmId:              order.SmId,
-			DateCreated:       order.DateCreated,
-			OofShard:          order.OofShard,
-		}).Error
+		err := s.db.Model(&existingOrder).Updates(order).Error //попробовать потом замеить длинную часть
+
 		if err != nil {
 			return err
 		}
@@ -78,5 +72,45 @@ func (s *OrderService) CreateOrder(order *model.Order) error {
 
 	// Сохраняем заказ в кэш
 	s.cache.Store(order.Order_uid, order)
+	return nil
+}
+
+// Восстановление кэша из БД
+func (s *OrderService) RestoreCacheFromDB() {
+	var orders []model.Order
+	// Загружаем все заказы из БД
+	if err := s.db.Preload("Delivery").Preload("Payment").Preload("Items").Find(&orders).Error; err != nil {
+		log.Printf("Ошибка при загрузке заказов из базы: %v", err)
+		return
+	}
+
+	// Добавляем заказы в кэш
+	for _, order := range orders {
+		s.cache.Store(order.Order_uid, &order)
+	}
+}
+
+// Сохраняем кэш в базу данных (например, при завершении работы)
+func (s *OrderService) SaveCacheToDB() error {
+	// Обходим весь кэш и сохраняем в базу
+	s.cache.Range(func(key, value interface{}) bool {
+		order, ok := value.(*model.Order)
+		if ok {
+			// Обновляем заказ в базе данных или создаем новый, если его нет
+			if err := s.db.Save(order).Error; err != nil {
+				log.Printf("Ошибка при сохранении заказа в базу данных: %v", err)
+			}
+		}
+		return true
+	})
+	return nil
+}
+
+func (s *OrderService) Migrate() error {
+	// Выполняем миграцию схемы
+	err := s.db.AutoMigrate(&model.Order{}, &model.Delivery{}, &model.Payment{}, &model.Items{})
+	if err != nil {
+		return fmt.Errorf("ошибка миграции базы данных: %w", err)
+	}
 	return nil
 }

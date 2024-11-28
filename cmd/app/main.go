@@ -8,10 +8,14 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"l0/cmd/kafka"
+	"l0/internal/handler"
 	"l0/internal/model"
 	"l0/internal/service"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -36,7 +40,7 @@ func main() {
 	dbPassword := os.Getenv("POSTGRES_PASSWORD")
 	dbName := os.Getenv("POSTGRES_DATABASE")
 
-	// Формирование строки подключения
+	// Формирование строки подключенияп
 	dsn := "host=" + dbHost +
 		" port=" + dbPort +
 		" user=" + dbUser +
@@ -50,10 +54,20 @@ func main() {
 		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
 
+	// Инициализация сервиса
+	orderService := service.NewOrderService(db)
+
+	// Выполнение миграций через сервис
+	err = orderService.Migrate()
+	if err != nil {
+		log.Fatalf("Ошибка выполнения миграций: %v", err)
+	}
+
+	log.Println("Миграции выполнены успешно")
+
 	// Если выбран режим записи данных
 	if *writeData {
 		if *filePath == "" {
-			// Запросить путь к файлу, если не передан в аргументах
 			fmt.Print("Введите путь к файлу для записи данных: ")
 			_, err := fmt.Scanln(filePath)
 			if err != nil {
@@ -61,7 +75,7 @@ func main() {
 			}
 		}
 		// Вызываем метод для записи данных в базу данных
-		err = model.WriteDataDB(db, *filePath)
+		err = model.WriteDataDB(orderService, *filePath)
 		if err != nil {
 			log.Fatalf("Ошибка записи данных в базу: %v", err)
 		}
@@ -69,12 +83,15 @@ func main() {
 		return
 	}
 
-	// Инициализация сервиса
-	orderService := service.NewOrderService(db)
-
 	// Настройки Kafka
 	broker := os.Getenv("KAFKA_BROKER")
 	topic := "orders"
+
+	// Создание топика, если он не существует
+	err = kafka.CreateTopicIfNotExist(broker, topic)
+	if err != nil {
+		log.Fatalf("Ошибка при создании топика: %v", err)
+	}
 
 	// Инициализация Kafka Producer
 	kafka.InitProducer(broker, topic)
@@ -102,6 +119,35 @@ func main() {
 
 	// Запуск Kafka Consumer
 	go kafka.ConsumeMessages(broker, topic, orderService)
+
+	// Создаем обработчик HTTP
+	orderHandler := handler.NewOrderHandler(orderService)
+
+	// Регистрируем маршрут для получения заказа
+	http.HandleFunc("/order", orderHandler.GetOrder)
+
+	// Запуск HTTP сервера на порту 8080
+	go func() {
+		log.Println("Запуск HTTP сервера на порту 8081...")
+		if err := http.ListenAndServe(":8081", nil); err != nil {
+			log.Fatalf("Ошибка при запуске HTTP сервера: %v", err)
+		}
+	}()
+
+	// Обработка прерывания работы сервиса
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Ожидание сигнала на завершение
+	<-sigChan
+
+	// Сохранение кэша в базу данных при завершении работы
+	err = orderService.SaveCacheToDB()
+	if err != nil {
+		log.Printf("Ошибка при сохранении кэша в базу данных: %v", err)
+	} else {
+		log.Println("Кэш успешно сохранен в базу данных.")
+	}
 
 	log.Println("Приложение запущено")
 	select {}

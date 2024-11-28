@@ -16,7 +16,7 @@ func NewOrderHandler(service *service.OrderService) *OrderHandler {
 	return &OrderHandler{service: service}
 }
 
-func (h *OrderHandler) GetOrderHandler(w http.ResponseWriter, r *http.Request) {
+func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
 	orderUID := r.URL.Query().Get("id")
 
 	//ищем по id если нет то ошибка 400
@@ -34,5 +34,4 @@ func (h *OrderHandler) GetOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(order)
-
 }

@@ -68,15 +68,15 @@ type Items struct {
 // validateOrder - функция валидации данных заказа
 func validateOrder(order Order) bool {
 	if order.Order_uid == "" {
-		log.Println("Invalid OrderUID")
+		log.Println("Неверный идентификатор заказа")
 		return false
 	}
 	if len(order.Items) == 0 {
-		log.Println("Order must have at least one item")
+		log.Println("В заказе должно быть хотя бы одно наименование")
 		return false
 	}
 	if order.Payment.Amount <= 0 {
-		log.Println("Payment amount must be greater than zero")
+		log.Println(" Сумма платежа должна быть больше нуля")
 		return false
 	}
 	// Добавьте другие проверки по необходимости
