@@ -28,7 +28,7 @@ func main() {
 	flag.Parse()
 
 	// Загрузка переменных окружения
-	err := godotenv.Load("local.env")
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Ошибка загрузки .env файла: %v", err)
 	}
@@ -57,14 +57,6 @@ func main() {
 	// Инициализация сервиса
 	orderService := service.NewOrderService(db)
 
-	// Выполнение миграций через сервис
-	err = orderService.Migrate()
-	if err != nil {
-		log.Fatalf("Ошибка выполнения миграций: %v", err)
-	}
-
-	log.Println("Миграции выполнены успешно")
-
 	// Если выбран режим записи данных
 	if *writeData {
 		if *filePath == "" {
@@ -83,15 +75,22 @@ func main() {
 		return
 	}
 
+	// Выполнение миграций через сервис
+	err = orderService.Migrate()
+	if err != nil {
+		log.Fatalf("Ошибка выполнения миграций: %v", err)
+	}
+	//log.Println("Миграции выполнены успешно")
+
 	// Настройки Kafka
 	broker := os.Getenv("KAFKA_BROKER")
 	topic := "orders"
 
 	// Создание топика, если он не существует
 	err = kafka.CreateTopicIfNotExist(broker, topic)
-	if err != nil {
-		log.Fatalf("Ошибка при создании топика: %v", err)
-	}
+	//if err != nil {
+	//	log.Fatalf("Ошибка при создании топика: %v", err)
+	//}
 
 	// Инициализация Kafka Producer
 	kafka.InitProducer(broker, topic)
@@ -102,6 +101,9 @@ func main() {
 	if err := db.Preload("Delivery").Preload("Payment").Preload("Items").Find(&orders).Error; err != nil {
 		log.Fatalf("Ошибка извлечения данных из базы: %v", err)
 	}
+
+	// Запуск Kafka Consumer
+	go kafka.ConsumeMessages(broker, topic, orderService)
 
 	for _, order := range orders {
 		orderJSON, err := json.Marshal(order)
@@ -117,9 +119,6 @@ func main() {
 		}
 	}
 
-	// Запуск Kafka Consumer
-	go kafka.ConsumeMessages(broker, topic, orderService)
-
 	// Создаем обработчик HTTP
 	orderHandler := handler.NewOrderHandler(orderService)
 
@@ -134,8 +133,8 @@ func main() {
 
 	// Запуск HTTP сервера на порту 8080
 	go func() {
-		log.Println("Запуск HTTP сервера на порту 8080...")
-		if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Println("Запуск HTTP сервера на порту 8081...")
+		if err := http.ListenAndServe(":8081", nil); err != nil {
 			log.Fatalf("Ошибка при запуске HTTP сервера: %v", err)
 		}
 	}()
@@ -156,5 +155,5 @@ func main() {
 	}
 
 	log.Println("Приложение завершило работу")
-	select {}
+	//select {} //не предоставляет способа завершить программу, кроме внешних сигналов (Ctrl+C)
 }

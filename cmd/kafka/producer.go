@@ -19,7 +19,7 @@ func InitProducer(broker string, topic string) {
 		Balancer:     &kafka.LeastBytes{},
 		RequiredAcks: kafka.RequireAll, // Подтверждение всех реплик
 	}
-	log.Println("Продюсер Kafka инициализирован")
+	log.Println("producer Kafka запущен")
 }
 
 func CloseProducer() {
@@ -67,7 +67,6 @@ func CreateTopicIfNotExist(broker string, topic string) error {
 	// Получаем метаданные топиков
 	partitions, err := conn.ReadPartitions(topic)
 	if err == nil && len(partitions) > 0 {
-		// Топик уже существует
 		log.Printf("Топик '%s' уже существует.", topic)
 		return nil
 	}
