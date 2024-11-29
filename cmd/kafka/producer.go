@@ -9,32 +9,35 @@ import (
 )
 
 //отправка сообщений
+type Producer struct {
+	writer *kafka.Writer
+}
 
-var kafkaWriter *kafka.Writer
-
-func InitProducer(broker string, topic string) {
-	kafkaWriter = &kafka.Writer{
+func InitProducer(broker string, topic string) *Producer {
+	kafkaWriter := &kafka.Writer{
 		Addr:         kafka.TCP(broker),
 		Topic:        topic,
 		Balancer:     &kafka.LeastBytes{},
-		RequiredAcks: kafka.RequireAll, // Подтверждение всех реплик
+		RequiredAcks: kafka.RequireAll,
 	}
 	log.Println("producer Kafka запущен")
-}
-
-func CloseProducer() {
-	if kafkaWriter != nil {
-		kafkaWriter.Close()
+	return &Producer{
+		writer: kafkaWriter,
 	}
 }
 
-func SendMessage(key, message string) error {
+func (p *Producer) Close() {
+	if p.writer != nil {
+		p.writer.Close()
+	}
+}
+func (p *Producer) SendMessage(key, message string) error {
 	msg := kafka.Message{
 		Key:   []byte(key),
 		Value: []byte(message),
 	}
 
-	err := kafkaWriter.WriteMessages(context.Background(), msg)
+	err := p.writer.WriteMessages(context.Background(), msg)
 	if err != nil {
 		return err
 	}
@@ -43,7 +46,7 @@ func SendMessage(key, message string) error {
 	return nil
 }
 
-func SendOrderMessage(order model.Order, key string) error {
+func (p *Producer) SendOrderMessage(order model.Order, key string) error {
 	// Сериализация структуры Order в JSON
 	messageBytes, err := json.Marshal(order)
 	if err != nil {
@@ -52,10 +55,10 @@ func SendOrderMessage(order model.Order, key string) error {
 	}
 
 	// Отправка JSON-сообщения
-	return SendMessage(key, string(messageBytes))
+	return p.SendMessage(key, string(messageBytes))
 }
 
-// CreateTopicIfNotExist создает топик, если он еще не существует
+//создает топик, если он еще не существует
 func CreateTopicIfNotExist(broker string, topic string) error {
 	conn, err := kafka.Dial("tcp", broker)
 	if err != nil {
