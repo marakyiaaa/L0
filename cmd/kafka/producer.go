@@ -57,34 +57,3 @@ func (p *Producer) SendOrderMessage(order model.Order, key string) error {
 	// Отправка JSON-сообщения
 	return p.SendMessage(key, string(messageBytes))
 }
-
-// создает топик, если он еще не существует
-func CreateTopicIfNotExist(broker string, topic string) error {
-	conn, err := kafka.Dial("tcp", broker)
-	if err != nil {
-		log.Printf("Ошибка подключения к Kafka: %v", err)
-		return err
-	}
-	defer conn.Close()
-
-	// Получаем метаданные топиков
-	partitions, err := conn.ReadPartitions(topic)
-	if err == nil && len(partitions) > 0 {
-		log.Printf("Топик '%s' уже существует.", topic)
-		return nil
-	}
-
-	// Если топик не существует, создаем его
-	err = conn.CreateTopics(kafka.TopicConfig{
-		Topic:             topic,
-		NumPartitions:     1, // Количество партиций
-		ReplicationFactor: 1, // Количество реплик
-	})
-	if err != nil {
-		log.Printf("Ошибка при создании топика: %v", err)
-		return err
-	}
-
-	log.Printf("Топик '%s' успешно создан.", topic)
-	return nil
-}

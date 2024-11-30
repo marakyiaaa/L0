@@ -18,14 +18,6 @@ import (
 )
 
 func main() {
-	// Флаг для выбора режима работы
-	//writeData := flag.Bool("write-data", false, "Write data to database")
-
-	//// Дополнительный флаг для указания пути к файлу (необязательно)
-	//filePath := flag.String("file", "", "Path to the file to write")
-	//
-	//flag.Parse()
-
 	// Загрузка переменных окружения
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -68,9 +60,6 @@ func main() {
 	broker := os.Getenv("KAFKA_BROKER")
 	topic := "orders"
 
-	// Создание топика, если он не существует
-	err = kafka.CreateTopicIfNotExist(broker, topic)
-
 	// Инициализация Kafka Producer
 	producer := kafka.InitProducer(broker, topic)
 	defer producer.Close()
@@ -108,7 +97,7 @@ func main() {
 	}
 
 	// Регистрируем маршрут для получения заказа
-	http.HandleFunc("/order", orderHandler.GetOrder)
+	http.HandleFunc("/orders", orderHandler.GetOrder)
 
 	// Запуск HTTP сервера на порту 8080
 	go func() {
