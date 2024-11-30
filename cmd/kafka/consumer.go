@@ -10,7 +10,7 @@ import (
 )
 
 ////чтение сообщений
-//
+
 func ConsumeMessages(broker string, topic string, orderService *service.OrderService) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:        []string{broker},

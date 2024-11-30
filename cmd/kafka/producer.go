@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-//отправка сообщений
+// отправка сообщений
 type Producer struct {
 	writer *kafka.Writer
 }
@@ -58,7 +58,7 @@ func (p *Producer) SendOrderMessage(order model.Order, key string) error {
 	return p.SendMessage(key, string(messageBytes))
 }
 
-//создает топик, если он еще не существует
+// создает топик, если он еще не существует
 func CreateTopicIfNotExist(broker string, topic string) error {
 	conn, err := kafka.Dial("tcp", broker)
 	if err != nil {

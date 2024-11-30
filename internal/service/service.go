@@ -14,6 +14,8 @@ type OrderCache interface {
 }
 
 type Repository interface {
+	CreateOrder(order model.Order)
+	GetOrder(id string) (model.Order, error)
 	GetOrders() ([]model.Order, error)
 }
 
@@ -27,18 +29,18 @@ func New(repository Repository, orderCache OrderCache) *Service {
 	if service.orderCache.IsEmpty() {
 		orders, err := service.repository.GetOrders()
 		if err != nil {
-			log.Println("Я не могу обновить кэsh")
+			log.Println("Не удалось обновить кэш из базы данных")
 		}
 
+		// Заполняем кэш заказами из бд
 		for _, order := range orders {
 			service.orderCache.CreateOrder(order)
 		}
-
 	}
-
 	return service
 }
 
+// Получаем заказ, сначала из кэша, затем из бд
 func (s *Service) GetOrder(id string) (model.Order, error) {
 	var order model.Order
 	var err error
@@ -50,21 +52,27 @@ func (s *Service) GetOrder(id string) (model.Order, error) {
 
 	order, err = s.repository.GetOrder(id)
 	if err != nil {
-		return order, fmt.Errorf(err)
+		return order, fmt.Errorf("не удалось найти заказ с id %s: %w", id, err)
 	}
 
+	// После получения заказа из бд, добавляем его в кэш
+	s.orderCache.CreateOrder(order)
 	return order, nil
 }
 
-//
-//import (
-//	"fmt"
-//	"gorm.io/gorm"
-//	"l0/internal/model"
-//	"log"
-//	"sync"
-//)
-//
+func (s *Service) CreateOrder(order model.Order) {
+	if !validateOrder(order) {
+		return errors.New("невалидный заказ")
+	}
+
+	err := s.repository.CreateOrder(&order)
+	if err != nil {
+		return fmt.Errorf("не удалось создать заказ в репозитории: %w", err)
+	}
+	s.orderCache.CreateOrder(order)
+	return nil
+}
+
 //type OrderService struct {
 //	cache sync.Map // Потокобезопасный кэш в памяти
 //	//Потокобезопасность позволяет использовать кэш в многопоточных приложениях

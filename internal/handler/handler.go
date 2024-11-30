@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"l0/internal/model"
 	"net/http"
 )
@@ -20,8 +21,16 @@ func NewHandler(service Service) *Handler {
 }
 
 func (h *Handler) GetOrders(w http.ResponseWriter, r *http.Request) {
-	if resp, err := h.service.GetOrders(); err != nil {
-		// status err
+	resp, err := h.service.GetOrders()
+	if err != nil {
+		http.Error(w, "Failed to fetch orders", http.StatusInternalServerError)
+		return
 	}
-	w.Write(resp)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+	//w.Write(resp)
 }
+
+//func (h *Handler) GetOrderID()  {
+//
+//}
