@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"github.com/segmentio/kafka-go"
 	"l0/internal/model"
+	"l0/internal/service"
 	"log"
 	"time"
 )
 
-////чтение сообщений
-
-func ConsumeMessages(broker string, topic string, orderService *service.OrderService) {
+// Чтение сообщений из Kafka
+func ConsumeMessages(broker string, topic string, orderService *service.Service) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:        []string{broker},
 		Topic:          topic,
@@ -41,8 +41,8 @@ func ConsumeMessages(broker string, topic string, orderService *service.OrderSer
 			continue
 		}
 
-		//// Создание заказа в БД и кэше через OrderService
-		if err := orderService.CreateOrder(&order); err != nil {
+		// Создание заказа через OrderService
+		if err := orderService.CreateOrder(order); err != nil {
 			log.Printf("Ошибка при сохранении заказа: %v", err)
 			continue
 		}

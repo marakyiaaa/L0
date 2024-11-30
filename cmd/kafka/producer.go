@@ -42,7 +42,7 @@ func (p *Producer) SendMessage(key, message string) error {
 		return err
 	}
 
-	log.Printf("Message sent: %s", message)
+	//log.Printf("Сообщение отправлено: %s", message)
 	return nil
 }
 

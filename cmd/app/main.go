@@ -2,15 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
-	"fmt"
 	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"l0/cmd/kafka"
+	"l0/internal/cache"
 	"l0/internal/handler"
 	"l0/internal/model"
+	"l0/internal/repository"
 	"l0/internal/service"
+	"l0/migrations"
 	"log"
 	"net/http"
 	"os"
@@ -20,12 +19,12 @@ import (
 
 func main() {
 	// Флаг для выбора режима работы
-	writeData := flag.Bool("write-data", false, "Write data to database from JSON file")
+	//writeData := flag.Bool("write-data", false, "Write data to database")
 
-	// Дополнительный флаг для указания пути к файлу (необязательно)
-	filePath := flag.String("file", "", "Path to the file to write")
-
-	flag.Parse()
+	//// Дополнительный флаг для указания пути к файлу (необязательно)
+	//filePath := flag.String("file", "", "Path to the file to write")
+	//
+	//flag.Parse()
 
 	// Загрузка переменных окружения
 	err := godotenv.Load(".env")
@@ -49,38 +48,21 @@ func main() {
 		" sslmode=disable"
 
 	// Подключение к базе данных
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := migrations.ConnectDB(dsn)
 	if err != nil {
 		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
 
+	// Заполнение базы данных тестовыми данными
+	if err := migrations.SeedDB(db); err != nil {
+		log.Fatalf("Ошибка заполнения базы данных данными: %v", err)
+	}
+
+	//Инициализация кэша
+	orderCache := cache.NewCache()
+
 	// Инициализация сервиса
-	orderService := service.NewOrderService(db)
-
-	// Если выбран режим записи данных
-	if *writeData {
-		if *filePath == "" {
-			fmt.Print("Введите путь к файлу для записи данных: ")
-			_, err := fmt.Scanln(filePath)
-			if err != nil {
-				log.Fatalf("Ошибка ввода пути к файлу: %v", err)
-			}
-		}
-		// Вызываем метод для записи данных в базу данных
-		err = model.WriteDataDB(orderService, *filePath)
-		if err != nil {
-			log.Fatalf("Ошибка записи данных в базу: %v", err)
-		}
-		log.Println("Данные успешно записаны в базу.")
-		return
-	}
-
-	// Выполнение миграций через сервис
-	err = orderService.Migrate()
-	if err != nil {
-		log.Fatalf("Ошибка выполнения миграций: %v", err)
-	}
-	//log.Println("Миграции выполнены успешно")
+	orderService := service.New(repository.NewRepository(db), orderCache)
 
 	// Настройки Kafka
 	broker := os.Getenv("KAFKA_BROKER")
@@ -88,13 +70,10 @@ func main() {
 
 	// Создание топика, если он не существует
 	err = kafka.CreateTopicIfNotExist(broker, topic)
-	//if err != nil {
-	//	log.Fatalf("Ошибка при создании топика: %v", err)
-	//}
 
 	// Инициализация Kafka Producer
-	kafka.InitProducer(broker, topic)
-	defer kafka.CloseProducer()
+	producer := kafka.InitProducer(broker, topic)
+	defer producer.Close()
 
 	// Извлечение данных из базы и отправка в Kafka
 	var orders []model.Order
@@ -102,16 +81,13 @@ func main() {
 		log.Fatalf("Ошибка извлечения данных из базы: %v", err)
 	}
 
-	// Запуск Kafka Consumer
-	go kafka.ConsumeMessages(broker, topic, orderService)
-
 	for _, order := range orders {
 		orderJSON, err := json.Marshal(order)
 		if err != nil {
 			log.Printf("Ошибка сериализации заказа: %v", err)
 			continue
 		}
-		err = kafka.SendMessage(order.Order_uid, string(orderJSON))
+		err = producer.SendMessage(order.Order_uid, string(orderJSON))
 		if err != nil {
 			log.Printf("Ошибка отправки сообщения в Kafka: %v", err)
 		} else {
@@ -119,8 +95,11 @@ func main() {
 		}
 	}
 
+	// Запуск Kafka Consumer
+	go kafka.ConsumeMessages(broker, topic, orderService)
+
 	// Создаем обработчик HTTP
-	orderHandler := handler.NewOrderHandler(orderService)
+	orderHandler := handler.NewHandler(orderService)
 
 	// Получение адреса сервера из переменной окружения или установка значения по умолчанию
 	serverAddress := os.Getenv("SERVER_ADDRESS")
@@ -133,8 +112,8 @@ func main() {
 
 	// Запуск HTTP сервера на порту 8080
 	go func() {
-		log.Println("Запуск HTTP сервера на порту 8081...")
-		if err := http.ListenAndServe(":8081", nil); err != nil {
+		log.Println("Запуск HTTP сервера на порту 8080...")
+		if err := http.ListenAndServe(":8080", nil); err != nil {
 			log.Fatalf("Ошибка при запуске HTTP сервера: %v", err)
 		}
 	}()
@@ -145,14 +124,6 @@ func main() {
 
 	// Ожидание сигнала на завершение
 	<-sigChan
-
-	// Сохранение кэша в базу данных при завершении работы
-	err = orderService.SaveCacheToDB()
-	if err != nil {
-		log.Printf("Ошибка при сохранении кэша в базу данных: %v", err)
-	} else {
-		log.Println("Кэш успешно сохранен в базу данных.")
-	}
 
 	log.Println("Приложение завершило работу")
 	//select {} //не предоставляет способа завершить программу, кроме внешних сигналов (Ctrl+C)

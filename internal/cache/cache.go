@@ -20,7 +20,7 @@ func NewCache() *Cache {
 }
 
 func (c *Cache) IsEmpty() bool {
-	var isEmpty bool = true
+	var isEmpty bool
 	c.msg.Range(func(key, value interface{}) bool {
 		isEmpty = false
 		return false

@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"gorm.io/gorm"
 	"l0/internal/model"
 	"log"
 )
@@ -14,7 +15,7 @@ type OrderCache interface {
 }
 
 type Repository interface {
-	CreateOrder(order model.Order)
+	CreateOrder(order model.Order) error
 	GetOrder(id string) (model.Order, error)
 	GetOrders() ([]model.Order, error)
 }
@@ -22,6 +23,10 @@ type Repository interface {
 type Service struct {
 	repository Repository
 	orderCache OrderCache
+}
+
+func (s *Service) GetOrders() ([]model.Order, error) {
+	return s.repository.GetOrders()
 }
 
 func New(repository Repository, orderCache OrderCache) *Service {
@@ -60,12 +65,28 @@ func (s *Service) GetOrder(id string) (model.Order, error) {
 	return order, nil
 }
 
-func (s *Service) CreateOrder(order model.Order) {
-	if !validateOrder(order) {
+func (s *Service) CreateOrder(order model.Order) error {
+	if !model.ValidateOrder(order) {
 		return errors.New("невалидный заказ")
 	}
 
-	err := s.repository.CreateOrder(&order)
+	//есть ли заказ в кэше
+	_, err := s.orderCache.GetOrder(order.Order_uid)
+	if err != nil {
+		log.Printf("заказ с ID '%s' уже существует в кэше", order.Order_uid)
+		return nil
+	}
+
+	//есть ли заказ в бд
+	_, err = s.repository.GetOrder(order.Order_uid)
+	if err != nil {
+		return fmt.Errorf("заказ с ID '%s' уже существует в базе данных", order.Order_uid)
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("ошибка при проверке существования заказа: %w", err)
+	}
+
+	err = s.repository.CreateOrder(order)
 	if err != nil {
 		return fmt.Errorf("не удалось создать заказ в репозитории: %w", err)
 	}

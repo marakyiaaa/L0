@@ -65,8 +65,7 @@ type Items struct {
 	Status      int    `json:"status"`
 }
 
-// validateOrder - функция валидации данных заказа
-func validateOrder(order Order) bool {
+func ValidateOrder(order Order) bool {
 	if order.Order_uid == "" {
 		log.Println("Неверный идентификатор заказа")
 		return false
@@ -79,7 +78,5 @@ func validateOrder(order Order) bool {
 		log.Println(" Сумма платежа должна быть больше нуля")
 		return false
 	}
-	// Добавьте другие проверки по необходимости
-
 	return true
 }
