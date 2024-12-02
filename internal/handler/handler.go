@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"l0/internal/model"
@@ -37,30 +36,17 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Возвращаем JSON для API
-	if r.Header.Get("Accept") == "application/json" {
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(order); err != nil {
-			http.Error(w, fmt.Sprintf("Ошибка при кодировании ответа: %v", err), http.StatusInternalServerError)
-			return
-		}
-		return
+	data := struct {
+		Order model.Order
+	}{
+		Order: order,
 	}
-	// Рендерим страницу с данными заказа
+
 	tmpl, err := template.ParseFiles("internal/handler/templates/order.html")
 	if err != nil {
 		log.Printf("Ошибка загрузки шаблона: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
-	}
-
-	// Параметры для рендера
-	data := struct {
-		Order interface{}
-		Error string
-	}{
-		Order: order,
-		Error: "",
 	}
 
 	tmpl.Execute(w, data)
@@ -73,14 +59,10 @@ func (h *Handler) RenderHTML(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	// Параметры для рендера
 	data := struct {
 		Order interface{}
-		Error string
 	}{
-		Order: nil,
-		Error: "",
+		Order: "",
 	}
-
 	tmpl.Execute(w, data)
 }

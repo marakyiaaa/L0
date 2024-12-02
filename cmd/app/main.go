@@ -55,10 +55,8 @@ func main() {
 		log.Printf("Созданы заказы с ID: %v", orderIDs)
 	}
 
-	//Инициализация кэша
+	//Инициализация кэша,сервиса
 	orderCache := cache.NewCache()
-
-	// Инициализация сервиса
 	orderService := service.New(repository.NewRepository(db), orderCache)
 
 	// Настройки Kafka
@@ -84,8 +82,6 @@ func main() {
 		err = producer.SendMessage(order.Order_uid, string(orderJSON))
 		if err != nil {
 			log.Printf("Ошибка отправки сообщения в Kafka: %v", err)
-		} else {
-			log.Printf("Заказ %s успешно отправлен в Kafka", order.Order_uid)
 		}
 	}
 
@@ -98,11 +94,11 @@ func main() {
 	// Получение адреса сервера из переменной окружения или установка значения по умолчанию
 	serverAddress := os.Getenv("SERVER_ADDRESS")
 	if serverAddress == "" {
-		serverAddress = "127.0.0.1:8080" // Значение по умолчанию
+		serverAddress = "127.0.0.1:8080"
 	}
 
 	// Регистрируем маршрут для получения заказа
-	http.HandleFunc("/", orderHandler.RenderHTML) // Главная страница с формой
+	http.HandleFunc("/", orderHandler.RenderHTML)
 	http.HandleFunc("/orders", orderHandler.GetOrder)
 
 	// Запуск HTTP сервера на порту 8080

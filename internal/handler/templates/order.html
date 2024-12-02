@@ -1,9 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Find Order</title>
-</head>
-<body>
 <h1>Find Order by ID</h1>
 <form action="/orders" method="GET">
     <label for="orderID">Order ID:</label>
@@ -12,13 +6,57 @@
 </form>
 
 {{if .Order}}
-<h2>Order Details</h2>
-<pre>{{.Order}}</pre>
+
+<h2>General Information</h2>
+<ul>
+    <li><strong>Order UID:</strong> {{.Order.Order_uid}}</li>
+    <li><strong>Track Number:</strong> {{.Order.Track_number}}</li>
+    <li><strong>Entry:</strong> {{.Order.Entry}}</li>
+    <li><strong>Locale:</strong> {{.Order.Locale}}</li>
+    <li><strong>Internal Signature:</strong> {{.Order.InternalSignature}}</li>
+    <li><strong>Customer ID:</strong> {{.Order.CustomerId}}</li>
+    <li><strong>Delivery Service:</strong> {{.Order.DeliveryService}}</li>
+    <li><strong>Shardkey:</strong> {{.Order.Shardkey}}</li>
+    <li><strong>SM ID:</strong> {{.Order.SmId}}</li>
+    <li><strong>Date Created:</strong> {{.Order.DateCreated}}</li>
+    <li><strong>OOF Shard:</strong> {{.Order.OofShard}}</li>
+</ul>
+
+<h2>Delivery Information</h2>
+<ul>
+    <li><strong>Name:</strong> {{.Order.Delivery.Name}}</li>
+    <li><strong>Phone:</strong> {{.Order.Delivery.Phone}}</li>
+    <li><strong>Zip:</strong> {{.Order.Delivery.Zip}}</li>
+    <li><strong>City:</strong> {{.Order.Delivery.City}}</li>
+    <li><strong>Address:</strong> {{.Order.Delivery.Address}}</li>
+    <li><strong>Region:</strong> {{.Order.Delivery.Region}}</li>
+    <li><strong>Email:</strong> {{.Order.Delivery.Email}}</li>
+</ul>
+
+<h2>Payment Information</h2>
+<ul>
+    <li><strong>Transaction:</strong> {{.Order.Payment.Transaction}}</li>
+    <li><strong>Request ID:</strong> {{.Order.Payment.RequestId}}</li>
+    <li><strong>Currency:</strong> {{.Order.Payment.Currency}}</li>
+    <li><strong>Provider:</strong> {{.Order.Payment.Provider}}</li>
+    <li><strong>Amount:</strong> {{.Order.Payment.Amount}}</li>
+    <li><strong>Payment Date:</strong> {{.Order.Payment.PaymentDt}}</li>
+    <li><strong>Bank:</strong> {{.Order.Payment.Bank}}</li>
+    <li><strong>Delivery Cost:</strong> {{.Order.Payment.DeliveryCost}}</li>
+    <li><strong>Goods Total:</strong> {{.Order.Payment.GoodsTotal}}</li>
+    <li><strong>Custom Fee:</strong> {{.Order.Payment.CustomFee}}</li>
+</ul>
+
+<h2>Items</h2>
+<ul>
+    {{range .Order.Items}}
+    <li><strong>Item Name:</strong> {{.Name}}</li>
+    <li><strong>Price:</strong> {{.Price}}</li>
+    <li><strong>Sale:</strong> {{.Sale}}</li>
+    <li><strong>Size:</strong> {{.Size}}</li>
+    <li><strong>Total Price:</strong> {{.TotalPrice}}</li>
+    <li><strong>Brand:</strong> {{.Brand}}</li>
+    {{end}}
+</ul>
 {{end}}
 
-{{if .Error}}
-<h2 style="color:red;">Error: {{.Error}}</h2>
-{{end}}
-
-</body>
-</html>

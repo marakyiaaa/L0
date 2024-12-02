@@ -52,7 +52,6 @@ func (p *Producer) SendOrderMessage(order model.Order, key string) error {
 		log.Printf("Ошибка сериализации JSON: %v", err)
 		return err
 	}
-
 	// Отправка JSON-сообщения
 	return p.SendMessage(key, string(messageBytes))
 }

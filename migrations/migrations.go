@@ -44,16 +44,12 @@ func SeedDB(db *gorm.DB) ([]string, error) {
 	if err := db.Model(&model.Order{}).Count(&count).Error; err != nil {
 		return nil, fmt.Errorf("ошибка проверки данных в базе: %w", err)
 	}
-	//if count > 0 {
-	//	log.Println("Данные уже существуют, пропускаем заполнение")
-	//	return nil, nil
-	//}
 
 	var orders []model.Order
 	var createdOrderIDs []string
 
 	for i := 0; i < 3; i++ {
-		orderUID := randomString(10)
+		orderUID := randomString(19)
 		order := model.Order{
 			Order_uid:    orderUID,
 			Track_number: randomString(15),

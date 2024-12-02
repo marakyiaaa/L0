@@ -28,7 +28,7 @@ func ConsumeMessages(broker string, topic string, orderService *service.Service)
 			log.Printf("Ошибка при чтении сообщения: %v", err)
 			continue
 		}
-		log.Printf("Сообщение получено: key=%s", string(m.Key))
+		log.Printf("Сообщение получено: %s", string(m.Key))
 
 		if !json.Valid(m.Value) {
 			log.Printf("Некорректный формат JSON: %s", string(m.Value))
