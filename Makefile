@@ -18,7 +18,14 @@ write_model:
 go:
 	go run cmd/app/main.go
 
-#style: install-deps
-#	${LOCAL_BIN}/golangci-lint run
+test:
+	go test -v internal/service/service_test.go internal/service/service.go
 
-.PHONY: build run reboot topic go style write_model go
+cover:
+	go test -cover internal/service/service_test.go internal/service/service.go
+
+
+style: install-deps
+	${LOCAL_BIN}/golangci-lint run
+
+.PHONY: build run reboot topic go style write_model go test cover
