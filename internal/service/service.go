@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
 	"l0/internal/model"
 	"log"
 )
@@ -82,9 +81,9 @@ func (s *Service) CreateOrder(order model.Order) error {
 	if err != nil {
 		return fmt.Errorf("заказ с ID '%s' уже существует в базе данных", order.Order_uid)
 	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("ошибка при проверке существования заказа: %w", err)
-	}
+	//if !errors.Is(err, gorm.ErrRecordNotFound) {
+	//	return fmt.Errorf("ошибка при проверке существования заказа: %w", err)
+	//}
 
 	err = s.repository.CreateOrder(order)
 	if err != nil {

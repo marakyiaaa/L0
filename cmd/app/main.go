@@ -17,6 +17,22 @@ import (
 	"syscall"
 )
 
+// @title
+// @version         1.0
+// @description     This is a sample server celler server.
+// @termsOfService  http://swagger.io/terms/
+
+// @Summary Получение информации о заказе по ID
+// @Description Получить заказ по ID
+// @ID get-order-by-id
+// @Accept  json
+// @Produce  json
+// @Param id path string true "ID заказа"
+// @Success 200 {object} model.Order "Информация о заказе"
+// @Failure 400 {object} ErrorResponse "Некорректный запрос"
+// @Failure 404 {object} ErrorResponse "Заказ не найден"
+// @Router /order/{id} [get]
+
 func main() {
 	// Загрузка переменных окружения
 	err := godotenv.Load(".env")
@@ -115,5 +131,4 @@ func main() {
 	<-sigChan
 
 	log.Println("Приложение завершило работу")
-	//select {} //не предоставляет способа завершить программу, кроме внешних сигналов (Ctrl+C)
 }

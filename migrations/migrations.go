@@ -33,6 +33,7 @@ func SeedDB(db *gorm.DB) error {
 		return nil
 	}
 
+	// Корректные данные
 	orders := []model.Order{
 		{
 			Order_uid:    "b563feb7b2b84b6test",
@@ -89,5 +90,6 @@ func SeedDB(db *gorm.DB) error {
 		return fmt.Errorf("Ошибка создания записи: %v", err)
 	}
 	log.Println("База данных успешно заполнена данными")
+
 	return nil
 }

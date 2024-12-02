@@ -30,7 +30,6 @@ func (c *Cache) IsEmpty() bool {
 
 // добавление или обновления данных в кэше
 func (c *Cache) CreateOrder(order model.Order) {
-	//"Store" -  sets the value for a key
 	c.msg.Store(order.Order_uid, order)
 }
 
