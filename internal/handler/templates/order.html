@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Find Order</title>
+</head>
+<body>
+<h1>Find Order by ID</h1>
+<form action="/orders" method="GET">
+    <label for="orderID">Order ID:</label>
+    <input type="text" id="orderID" name="id" required>
+    <button type="submit">Search</button>
+</form>
+
+{{if .Order}}
+<h2>Order Details</h2>
+<pre>{{.Order}}</pre>
+{{end}}
+
+{{if .Error}}
+<h2 style="color:red;">Error: {{.Error}}</h2>
+{{end}}
+
+</body>
+</html>

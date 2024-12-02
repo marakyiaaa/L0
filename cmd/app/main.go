@@ -17,22 +17,6 @@ import (
 	"syscall"
 )
 
-// @title
-// @version         1.0
-// @description     This is a sample server celler server.
-// @termsOfService  http://swagger.io/terms/
-
-// @Summary Получение информации о заказе по ID
-// @Description Получить заказ по ID
-// @ID get-order-by-id
-// @Accept  json
-// @Produce  json
-// @Param id path string true "ID заказа"
-// @Success 200 {object} model.Order "Информация о заказе"
-// @Failure 400 {object} ErrorResponse "Некорректный запрос"
-// @Failure 404 {object} ErrorResponse "Заказ не найден"
-// @Router /order/{id} [get]
-
 func main() {
 	// Загрузка переменных окружения
 	err := godotenv.Load(".env")
@@ -62,8 +46,13 @@ func main() {
 	}
 
 	// Заполнение базы данных тестовыми данными
-	if err := migrations.SeedDB(db); err != nil {
+	orderIDs, err := migrations.SeedDB(db)
+	if err != nil {
 		log.Fatalf("Ошибка заполнения базы данных данными: %v", err)
+	}
+
+	if orderIDs != nil {
+		log.Printf("Созданы заказы с ID: %v", orderIDs)
 	}
 
 	//Инициализация кэша
@@ -113,6 +102,7 @@ func main() {
 	}
 
 	// Регистрируем маршрут для получения заказа
+	http.HandleFunc("/", orderHandler.RenderHTML) // Главная страница с формой
 	http.HandleFunc("/orders", orderHandler.GetOrder)
 
 	// Запуск HTTP сервера на порту 8080

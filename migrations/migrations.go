@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"l0/internal/model"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -23,73 +24,94 @@ func ConnectDB(dsn string) (*gorm.DB, error) {
 	return db, nil
 }
 
-func SeedDB(db *gorm.DB) error {
+func randomString(lenght int) string {
+	const char = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	rand.Seed(time.Now().UnixNano())
+	x := make([]byte, lenght)
+	for i := range x {
+		x[i] = char[rand.Intn(len(char))]
+	}
+	return string(x)
+}
+
+func randomInt(min, max int) int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(max-min) + max
+}
+
+func SeedDB(db *gorm.DB) ([]string, error) {
 	var count int64
 	if err := db.Model(&model.Order{}).Count(&count).Error; err != nil {
-		return fmt.Errorf("ошибка проверки данных в базе: %w", err)
+		return nil, fmt.Errorf("ошибка проверки данных в базе: %w", err)
 	}
-	if count > 0 {
-		log.Println("Данные уже существуют, пропускаем заполнение")
-		return nil
-	}
+	//if count > 0 {
+	//	log.Println("Данные уже существуют, пропускаем заполнение")
+	//	return nil, nil
+	//}
 
-	// Корректные данные
-	orders := []model.Order{
-		{
-			Order_uid:    "b563feb7b2b84b6test",
-			Track_number: "WBILMTESTTRACK",
+	var orders []model.Order
+	var createdOrderIDs []string
+
+	for i := 0; i < 3; i++ {
+		orderUID := randomString(10)
+		order := model.Order{
+			Order_uid:    orderUID,
+			Track_number: randomString(15),
 			Entry:        "WBIL",
 			Delivery: model.Delivery{
-				Name:    "Test Testov",
-				Phone:   "+9720000000",
-				Zip:     "2639809",
-				City:    "Kiryat Mozkin",
-				Address: "Ploshad Mira 15",
-				Region:  "Kraiot",
-				Email:   "test@gmail.com",
+				Name:    fmt.Sprintf("User %d", i+1),
+				Phone:   fmt.Sprintf("+972%07d", randomInt(1000000, 9999999)),
+				Zip:     fmt.Sprintf("%05d", randomInt(10000, 99999)),
+				City:    "Random City",
+				Address: fmt.Sprintf("Street %d", i+1),
+				Region:  "Random Region",
+				Email:   fmt.Sprintf("user%d@example.com", i+1),
 			},
 			Payment: model.Payment{
-				Transaction:  "b563feb7b2b84b6test",
+				Transaction:  randomString(10),
 				RequestId:    "",
 				Currency:     "USD",
 				Provider:     "wbpay",
-				Amount:       1817,
-				PaymentDt:    1637907727,
-				Bank:         "alpha",
-				DeliveryCost: 1500,
-				GoodsTotal:   317,
-				CustomFee:    0,
+				Amount:       randomInt(1000, 5000),
+				PaymentDt:    randomInt(1, 100000),
+				Bank:         "Random Bank",
+				DeliveryCost: randomInt(100, 500),
+				GoodsTotal:   randomInt(500, 1500),
+				CustomFee:    randomInt(0, 50),
 			},
 			Items: []model.Items{
 				{
-					ChrtId:      9934930,
-					TrackNumber: "WBILMTESTTRACK",
-					Price:       453,
-					Rid:         "ab4219087a764ae0btest",
-					Name:        "Mascaras",
-					Sale:        30,
-					Size:        "0",
-					TotalPrice:  317,
-					NmId:        2389212,
-					Brand:       "Vivienne Sabo",
-					Status:      202,
+					ChrtId:      randomInt(1000000, 9999999),
+					TrackNumber: randomString(15),
+					Price:       randomInt(100, 500),
+					Rid:         randomString(10),
+					Name:        fmt.Sprintf("Item %d", i+1),
+					Sale:        randomInt(10, 50),
+					Size:        "L",
+					TotalPrice:  randomInt(500, 1500),
+					NmId:        randomInt(100000, 999999),
+					Brand:       "Random Brand",
+					Status:      randomInt(200, 400),
 				},
 			},
 			Locale:            "en",
 			InternalSignature: "",
-			CustomerId:        "test",
+			CustomerId:        randomString(6),
 			DeliveryService:   "meest",
-			Shardkey:          "9",
-			SmId:              99,
+			Shardkey:          fmt.Sprintf("%d", randomInt(1, 10)),
+			SmId:              randomInt(10, 100),
 			DateCreated:       time.Now(),
 			OofShard:          "1",
-		},
+		}
+		orders = append(orders, order)
+		createdOrderIDs = append(createdOrderIDs, orderUID)
 	}
 
+	// Добавляем в базу данных
 	if err := db.Create(&orders).Error; err != nil {
-		return fmt.Errorf("Ошибка создания записи: %v", err)
+		return nil, fmt.Errorf("Ошибка создания записи: %v", err)
 	}
-	log.Println("База данных успешно заполнена данными")
 
-	return nil
+	log.Println("База данных успешно заполнена")
+	return createdOrderIDs, nil
 }
