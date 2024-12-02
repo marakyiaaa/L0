@@ -27,12 +27,8 @@ brew_wrk:
 wrk:
 	@wrk -t4 -c200 -d30s http://localhost:8080/api/orders
 
-
 check:
-	golangci-lint run
+	@golangci-lint run
 
 
-style:
-	@${LOCAL_BIN}/golangci-lint run --fix
-
-.PHONY: build run reboot topic go check style go test cover brew_wrk wrk
+.PHONY: build run reboot topic go test cover brew_wrk wrk check

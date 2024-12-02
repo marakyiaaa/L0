@@ -44,18 +44,22 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, err := template.ParseFiles("internal/handler/templates/order.html")
 	if err != nil {
-		logrus.Info("Ошибка загрузки шаблона: %v", err)
+		logrus.WithField("Ошибка загрузки шаблона: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	tmpl.Execute(w, data)
+	if err := tmpl.Execute(w, data); err != nil {
+		logrus.WithField("Ошибка выполнения шаблона", err).Error()
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handler) RenderHTML(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("internal/handler/templates/order.html")
 	if err != nil {
-		logrus.Info("Ошибка загрузки шаблона", err)
+		logrus.WithField("Ошибка загрузки шаблона", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -64,5 +68,10 @@ func (h *Handler) RenderHTML(w http.ResponseWriter, r *http.Request) {
 	}{
 		Order: "",
 	}
-	tmpl.Execute(w, data)
+
+	if err := tmpl.Execute(w, data); err != nil {
+		logrus.WithField("Ошибка выполнения шаблона", err).Error()
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }

@@ -3,8 +3,8 @@ package service
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"l0/internal/model"
-	"log"
 )
 
 type OrderCache interface {
@@ -33,7 +33,7 @@ func New(repository Repository, orderCache OrderCache) *Service {
 	if service.orderCache.IsEmpty() {
 		orders, err := service.repository.GetOrders()
 		if err != nil {
-			log.Println("Не удалось обновить кэш из базы данных")
+			logrus.Info("Не удалось обновить кэш из базы данных")
 		}
 
 		// Заполняем кэш заказами из бд
@@ -72,7 +72,7 @@ func (s *Service) CreateOrder(order model.Order) error {
 	//есть ли заказ в кэше
 	_, err := s.orderCache.GetOrder(order.Order_uid)
 	if err != nil {
-		log.Printf("заказ с ID '%s' уже существует в кэше", order.Order_uid)
+		logrus.Info("заказ с таким ID уже существует в кэше")
 		return nil
 	}
 

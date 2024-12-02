@@ -25,28 +25,28 @@ func ConsumeMessages(broker string, topic string, orderService *service.Service)
 	for {
 		m, err := r.ReadMessage(context.Background())
 		if err != nil {
-			logrus.Info("Ошибка при чтении сообщения: %v", err)
+			logrus.WithField("Ошибка при чтении сообщения: %v", err)
 			continue
 		}
-		logrus.Info("Сообщение получено: %s", string(m.Key))
+		logrus.WithField("Сообщение получено: %s", string(m.Key))
 
 		if !json.Valid(m.Value) {
-			logrus.Info("Некорректный формат JSON: %s", string(m.Value))
+			logrus.WithField("Некорректный формат JSON: %s", string(m.Value))
 			continue
 		}
 
 		var order model.Order
 		if err := json.Unmarshal(m.Value, &order); err != nil {
-			logrus.Info("Ошибка при декодировании данных: %v", err)
+			logrus.WithField("Ошибка при декодировании данных: %v", err)
 			continue
 		}
 
 		// Создание заказа через OrderService
 		if err := orderService.CreateOrder(order); err != nil {
-			logrus.Info("Ошибка при сохранении заказа: %v", err)
+			logrus.WithField("Ошибка при сохранении заказа: %v", err)
 			continue
 		}
 
-		logrus.Info("Заказ успешно обработан: %s", order.Order_uid)
+		logrus.WithField("Заказ успешно обработан: %s", order.Order_uid)
 	}
 }

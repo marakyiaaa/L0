@@ -24,19 +24,18 @@ func ConnectDB(dsn string) (*gorm.DB, error) {
 	return db, nil
 }
 
-func randomString(lenght int) string {
+func randomString(length int) string {
 	const char = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	rand.Seed(time.Now().UnixNano())
-	x := make([]byte, lenght)
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	x := make([]byte, length)
 	for i := range x {
-		x[i] = char[rand.Intn(len(char))]
+		x[i] = char[rng.Intn(len(char))]
 	}
 	return string(x)
 }
-
 func randomInt(min, max int) int {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Intn(max-min) + max
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return rng.Intn(max-min) + min
 }
 
 func SeedDB(db *gorm.DB) ([]string, error) {

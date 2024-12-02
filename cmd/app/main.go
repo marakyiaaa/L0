@@ -86,20 +86,17 @@ func main() {
 	// Создаем обработчик HTTP
 	orderHandler := handler.NewHandler(orderService)
 
-	// Получение адреса сервера из переменной окружения или установка значения по умолчанию
+	// Получаем адрес сервера из переменной окружения
 	serverAddress := os.Getenv("SERVER_ADDRESS")
-	if serverAddress == "" {
-		serverAddress = "127.0.0.1:8080"
-	}
 
-	// Регистрируем маршрут для получения заказа
+	// Регистрируем маршруты
 	http.HandleFunc("/", orderHandler.RenderHTML)
 	http.HandleFunc("/orders", orderHandler.GetOrder)
 
-	// Запуск HTTP сервера на порту 8080
+	// Запуск HTTP сервера
 	go func() {
-		log.Println("Запуск HTTP сервера на порту 8080")
-		if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Printf("Запуск HTTP сервера на %s\n", serverAddress)
+		if err := http.ListenAndServe(serverAddress, nil); err != nil {
 			logrus.WithError(err).Fatal("Ошибка при запуске HTTP сервера")
 		}
 	}()

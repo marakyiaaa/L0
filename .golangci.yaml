@@ -1,0 +1,9 @@
+run:
+skip-dirs:
+- vendor
+linters:
+enable:
+- errcheck
+- gofmt
+- govet
+- unused

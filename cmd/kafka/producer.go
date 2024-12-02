@@ -49,7 +49,7 @@ func (p *Producer) SendOrderMessage(order model.Order, key string) error {
 	// Сериализация структуры Order в JSON
 	messageBytes, err := json.Marshal(order)
 	if err != nil {
-		logrus.Info("Ошибка сериализации JSON: %v", err)
+		logrus.WithField("Ошибка сериализации JSON: %v", err)
 		return err
 	}
 	// Отправка JSON-сообщения
