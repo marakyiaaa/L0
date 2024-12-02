@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/segmentio/kafka-go"
+	"github.com/sirupsen/logrus"
 	"l0/internal/model"
-	"log"
 )
 
 // отправка сообщений
@@ -20,7 +20,7 @@ func InitProducer(broker string, topic string) *Producer {
 		Balancer:     &kafka.LeastBytes{},
 		RequiredAcks: kafka.RequireAll,
 	}
-	log.Println("producer Kafka запущен")
+	logrus.Info("producer Kafka запущен")
 	return &Producer{
 		writer: kafkaWriter,
 	}
@@ -49,7 +49,7 @@ func (p *Producer) SendOrderMessage(order model.Order, key string) error {
 	// Сериализация структуры Order в JSON
 	messageBytes, err := json.Marshal(order)
 	if err != nil {
-		log.Printf("Ошибка сериализации JSON: %v", err)
+		logrus.Info("Ошибка сериализации JSON: %v", err)
 		return err
 	}
 	// Отправка JSON-сообщения

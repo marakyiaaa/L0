@@ -2,9 +2,9 @@ package handler
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"html/template"
 	"l0/internal/model"
-	"log"
 	"net/http"
 )
 
@@ -44,7 +44,7 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, err := template.ParseFiles("internal/handler/templates/order.html")
 	if err != nil {
-		log.Printf("Ошибка загрузки шаблона: %v", err)
+		logrus.Info("Ошибка загрузки шаблона: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -55,7 +55,7 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) RenderHTML(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("internal/handler/templates/order.html")
 	if err != nil {
-		log.Printf("Ошибка загрузки шаблона", err)
+		logrus.Info("Ошибка загрузки шаблона", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}

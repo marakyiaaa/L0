@@ -1,31 +1,38 @@
 include .env
 
 build:
-	docker compose build
+	@docker compose build
 
 run:
-	docker compose up -d
+	@docker compose up -d
 
 reboot:
-	docker compose down
+	@docker compose down
 
 topic:
-	docker exec kafka kafka-topics --bootstrap-server kafka:9092 --create --topic orders
-
-write_model:
-	go run cmd/app/main.go --write-data
+	@docker exec kafka kafka-topics --bootstrap-server kafka:9092 --create --topic orders
 
 go:
-	go run cmd/app/main.go
+	@go run cmd/app/main.go
 
 test:
-	go test -v internal/service/service_test.go internal/service/service.go
+	@go test -v internal/service/service_test.go internal/service/service.go
 
 cover:
-	go test -cover internal/service/service_test.go internal/service/service.go
+	@go test -cover internal/service/service_test.go internal/service/service.go
+
+brew_wrk:
+	@brew install wrk
+
+wrk:
+	@wrk -t4 -c200 -d30s http://localhost:8080/api/orders
 
 
-style: install-deps
-	${LOCAL_BIN}/golangci-lint run
+check:
+	golangci-lint run
 
-.PHONY: build run reboot topic go style write_model go test cover
+
+style:
+	@${LOCAL_BIN}/golangci-lint run --fix
+
+.PHONY: build run reboot topic go check style go test cover brew_wrk wrk

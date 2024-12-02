@@ -2,10 +2,10 @@ package migrations
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"l0/internal/model"
-	"log"
 	"math/rand"
 	"time"
 )
@@ -20,7 +20,7 @@ func ConnectDB(dsn string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("ошибка миграции базы данных: %w", err)
 	}
 
-	log.Println("Успешное подключение к базе данных")
+	logrus.Info("Успешное подключение к базе данных")
 	return db, nil
 }
 
@@ -108,6 +108,6 @@ func SeedDB(db *gorm.DB) ([]string, error) {
 		return nil, fmt.Errorf("Ошибка создания записи: %v", err)
 	}
 
-	log.Println("База данных успешно заполнена")
+	logrus.Info("База данных успешно заполнена")
 	return createdOrderIDs, nil
 }

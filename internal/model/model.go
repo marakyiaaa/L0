@@ -1,7 +1,7 @@
 package model
 
 import (
-	"log"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -67,15 +67,15 @@ type Items struct {
 
 func ValidateOrder(order Order) bool {
 	if order.Order_uid == "" {
-		log.Println("Неверный идентификатор заказа")
+		logrus.Info("Неверный идентификатор заказа")
 		return false
 	}
 	if len(order.Items) == 0 {
-		log.Println("В заказе должно быть хотя бы одно наименование")
+		logrus.Info("В заказе должно быть хотя бы одно наименование")
 		return false
 	}
 	if order.Payment.Amount <= 0 {
-		log.Println(" Сумма платежа должна быть больше нуля")
+		logrus.Info(" Сумма платежа должна быть больше нуля")
 		return false
 	}
 	return true

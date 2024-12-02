@@ -3,10 +3,10 @@ package main
 import (
 	"encoding/json"
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 	"l0/cmd/kafka"
 	"l0/internal/cache"
 	"l0/internal/handler"
-	"l0/internal/model"
 	"l0/internal/repository"
 	"l0/internal/service"
 	"l0/migrations"
@@ -18,41 +18,35 @@ import (
 )
 
 func main() {
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+	logrus.SetLevel(logrus.InfoLevel)
+
 	// Загрузка переменных окружения
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("Ошибка загрузки .env файла: %v", err)
+		logrus.WithError(err).Fatal("Ошибка загрузки .env файла")
 	}
 
 	// Получение переменных окружения для базы данных
-	dbHost := os.Getenv("POSTGRES_HOST")
-	dbPort := os.Getenv("POSTGRES_PORT")
-	dbUser := os.Getenv("POSTGRES_USERNAME")
-	dbPassword := os.Getenv("POSTGRES_PASSWORD")
-	dbName := os.Getenv("POSTGRES_DATABASE")
-
-	// Формирование строки подключенияп
-	dsn := "host=" + dbHost +
-		" port=" + dbPort +
-		" user=" + dbUser +
-		" password=" + dbPassword +
-		" dbname=" + dbName +
-		" sslmode=disable"
+	dsn := os.Getenv("POSTGRES_CONN")
+	if dsn == "" {
+		logrus.Fatal("Переменная окружения POSTGRES_CONN не задана")
+	}
 
 	// Подключение к базе данных
 	db, err := migrations.ConnectDB(dsn)
 	if err != nil {
-		log.Fatalf("Ошибка подключения к базе данных: %v", err)
+		logrus.WithError(err).Fatal("Ошибка подключения к базе данных")
 	}
 
-	// Заполнение базы данных тестовыми данными
+	// Заполнение бд данными
 	orderIDs, err := migrations.SeedDB(db)
 	if err != nil {
-		log.Fatalf("Ошибка заполнения базы данных данными: %v", err)
+		logrus.WithError(err).Fatal("Ошибка заполнения базы данных данными")
 	}
 
 	if orderIDs != nil {
-		log.Printf("Созданы заказы с ID: %v", orderIDs)
+		logrus.WithField("orderIDs", orderIDs).Info("Созданы заказы")
 	}
 
 	//Инициализация кэша,сервиса
@@ -67,21 +61,22 @@ func main() {
 	producer := kafka.InitProducer(broker, topic)
 	defer producer.Close()
 
-	// Извлечение данных из базы и отправка в Kafka
-	var orders []model.Order
-	if err := db.Preload("Delivery").Preload("Payment").Preload("Items").Find(&orders).Error; err != nil {
-		log.Fatalf("Ошибка извлечения данных из базы: %v", err)
+	// Извлечение данных из базы через репозиторий и отправка в Kafka
+	orders, err := orderService.GetOrders()
+	if err != nil {
+		logrus.WithError(err).Fatal("Ошибка извлечения данных из базы")
 	}
 
 	for _, order := range orders {
 		orderJSON, err := json.Marshal(order)
 		if err != nil {
-			log.Printf("Ошибка сериализации заказа: %v", err)
+			logrus.WithError(err).WithField("orderUID", order.Order_uid).Warn("Ошибка сериализации заказа")
 			continue
 		}
+
 		err = producer.SendMessage(order.Order_uid, string(orderJSON))
 		if err != nil {
-			log.Printf("Ошибка отправки сообщения в Kafka: %v", err)
+			logrus.WithError(err).WithField("orderUID", order.Order_uid).Error("Ошибка отправки сообщения в Kafka")
 		}
 	}
 
@@ -103,9 +98,9 @@ func main() {
 
 	// Запуск HTTP сервера на порту 8080
 	go func() {
-		log.Println("Запуск HTTP сервера на порту 8080...")
+		log.Println("Запуск HTTP сервера на порту 8080")
 		if err := http.ListenAndServe(":8080", nil); err != nil {
-			log.Fatalf("Ошибка при запуске HTTP сервера: %v", err)
+			logrus.WithError(err).Fatal("Ошибка при запуске HTTP сервера")
 		}
 	}()
 
@@ -116,5 +111,5 @@ func main() {
 	// Ожидание сигнала на завершение
 	<-sigChan
 
-	log.Println("Приложение завершило работу")
+	logrus.Info("Приложение завершило работу")
 }
